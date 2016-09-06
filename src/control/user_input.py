@@ -24,8 +24,9 @@ class UserInput(object):
             return
         square = self.main_window.sender()
         position = square.get_position()
+        color = self.game.active_player_color()
         if self.game.put_piece_at(position):
-            self.main_window.put_piece(position, self.game.active_player_color())
+            self.main_window.put_piece(position, color)
             result = self.game.check_game_end()
             if result == 'end':
                 self.main_window.game_over()
