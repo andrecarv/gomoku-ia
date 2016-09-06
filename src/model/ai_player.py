@@ -14,10 +14,11 @@ class MyClass(object):
     '''
 
 
-    def __init__(self, params):
+    def __init__(self, color):
         '''
         Constructor
         '''
+        self.color = color
     
     
     def evaluate_board(self, board):
@@ -38,5 +39,4 @@ class MyClass(object):
             if blocked:
                 score / 10
             total += score
-            
         pass
