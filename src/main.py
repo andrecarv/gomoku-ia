@@ -12,6 +12,7 @@ if __name__ == '__main__':
     w = MainWindow()
     w.show()
     sys.exit(app.exec_())
+    
 #     board = Board()
 #     [board.insert_piece(Piece(Position(x,0), "black")) for x in range(4)]
 #     for x in range(5):

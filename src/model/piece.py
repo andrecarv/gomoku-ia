@@ -3,12 +3,13 @@ Created on Aug 29, 2016
 
 @author: andre
 '''
+from model.position import Position
 
 class Piece(object):
     '''
     classdocs
     '''
-
+    
     def __init__(self, position, color):
         '''
         Constructor
