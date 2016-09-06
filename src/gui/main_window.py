@@ -3,33 +3,32 @@ Created on Sep 5, 2016
 
 @author: andre
 '''
+from PyQt5.Qt import QWidget, QPushButton
 from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QFont, QPixmap, QImage, QPalette
 from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QGridLayout, \
     QHBoxLayout, QDialog
-from PyQt5.QtGui import QFont, QPixmap
+
 from model.position import Position
-from PyQt5.Qt import QWidget, QPushButton
+
 
 COLOR_URL = {'black' : 'black.png', 'white':'white.png'}
-ACTIVE_PLAYER = {1:'Player 1 (black)', -1:'Player 2 (white)'}
+PLAYERS = {1:'Player 1 (green)', -1:'Player 2 (red)'}
 
 class MainWindow(QMainWindow):
     
-    def __init__(self, control):
+    def __init__(self):
         super(QMainWindow, self).__init__()
         self.setWindowTitle("Gomoku")
-        self.player1 = True
-        self.p1_txt = "Player 1 ( x )"
-        self.p2_txt = "Player 2 ( o )"
         self.resize(800, 600)  # 493, 478
         self.squares = []
         
-        self.initUI(control)
+        self.initUI()
         
-    def initUI(self, control):
-        self.centralw = QWidget()
+    def initUI(self):
+        self.central_widget = QWidget()
         
-        self.v_layout = QVBoxLayout(self.centralw)
+        self.v_layout = QVBoxLayout(self.central_widget)
         self.v_layout.setContentsMargins(11, 11, 11, 11)
         self.v_layout.setSpacing(6)
         
@@ -40,30 +39,16 @@ class MainWindow(QMainWindow):
         
         self.new_game_btn = QPushButton("New Game")
         self.new_game_btn.setFixedSize(self.new_game_btn.sizeHint())
-        self.new_game_btn.clicked.connect(self.control.new_game)
         hlayout.addWidget(self.new_game_btn)
-        
-        # ##
-#         def end_game_dialog():
-#             d = QDialog()
-#             lay = QHBoxLayout()
-#             lbl = QLabel("Player x won")
-#             lay.addWidget(lbl)
-#             d.setLayout(lay)
-#             d.exec_()
-#         end_game = QPushButton("End Game")
-#         hlayout.addWidget(end_game)
-#         end_game.clicked.connect(end_game_dialog)
-        # ##
         
         hlayout.addStretch(1)
         
-        self.player_turn = QLabel("Player Turn: ")
-        self.player_turn.setFixedSize(self.player_turn.sizeHint())
-        self.player_lbl = QLabel(self.p1_txt)
-        self.player_lbl.setFixedSize(self.player_lbl.sizeHint())
-        hlayout.addWidget(self.player_turn)
-        hlayout.addWidget(self.player_lbl)
+        player_lbl = QLabel("Player Turn: ")
+        player_lbl.setFixedSize(player_lbl.sizeHint())
+        self.active_player_lbl = QLabel(PLAYERS[1])
+        self.active_player_lbl.setFixedSize(self.active_player_lbl.sizeHint())
+        hlayout.addWidget(player_lbl)
+        hlayout.addWidget(self.active_player_lbl)
     
         
         self.board_layout = QGridLayout()
@@ -72,28 +57,52 @@ class MainWindow(QMainWindow):
         
         self.v_layout.addLayout(self.board_layout)
         
-        self.setCentralWidget(self.centralw)
-        
-        # QMetaObject.connectSlotsByName(MainWindow)
+        self.setCentralWidget(self.central_widget)
         
         for i in range(15):
             for j in range(15):
                 sq = Square(Position(i, j))
                 self.squares.append(sq)
                 self.board_layout.addWidget(sq, i, j)
-                sq.clicked.connect(self.control.square_clicked)
                 
     def put_piece(self, position, color):
         label = self.sender()
-        label.setPixmap(QPixmap(COLOR_URL[color]))
+#         image = QImage()
+#         image.load(COLOR_URL[color])
+#         label.setPixmap(QPixmap.fromImage(image))
+        label.setStyleSheet("QLabel { background-color: %s; border-style: outset; border-width: 1px;border-color: black;}" % color)
+        label.show()
+#         label.setText("X")
+#         label.setPixmap(QPixmap(COLOR_URL[color]))
         
-    def change_player_turn(self):
-        # TODO
-        pass
+    def change_player_turn(self, active_player):
+        self.active_player_lbl.setText(PLAYERS[active_player])
     
     def clean(self):
+        self.active_player_lbl.setText(PLAYERS[1])
         for square in self.squares:
             square.initUI()
+            
+    def four_sequence_warning(self):
+        d = QDialog()
+        hlayout = QHBoxLayout()
+        lbl = QLabel("You're loosing Idiot!")
+        hlayout.addWidget(lbl)
+        d.setLayout(hlayout)
+        d.exec_()
+            
+    def game_over(self):
+        d = QDialog()
+        hlayout = QHBoxLayout()
+        lbl = QLabel("The winner is %s" % self.active_player_lbl.text())
+        hlayout.addWidget(lbl)
+        d.setLayout(hlayout)
+        d.exec_()
+    
+    def set_connections(self, user_input):
+        for square in self.squares:
+            square.clicked.connect(user_input.square_clicked)
+        self.new_game_btn.clicked.connect(user_input.new_game)
     
 class Square(QLabel):
     clicked = pyqtSignal()

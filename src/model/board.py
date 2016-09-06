@@ -72,8 +72,10 @@ class Board(object):
                     total += 1
                 else:
                     fs_continue = False
+                if total == 4:
+                    return "four"
                 if total >= 5:
-                    return True
+                    return "end"
         return False
             
     def verify_sequence(self, pos, vector, color): # @Deprecated
