@@ -6,9 +6,7 @@ Created on Aug 29, 2016
 #    1 2 3
 #    4   5
 #    6 7 8
-DIRECTIONS = [(-1, -1), (0, -1), (1, -1), (-1, 0),
-               (1, 0), (-1, 1), (0, 1), (1, 1)] # @Deprecated
-DIRECTIONS2 = (((-1, -1), (1, 1)), ((0, -1), (0, 1)),
+DIRECTIONS = (((-1, -1), (1, 1)), ((0, -1), (0, 1)),
                 ((-1, 0), (1, 0)), ((-1, 1), (1, -1)))
 
 class Board(object):
@@ -17,12 +15,23 @@ class Board(object):
     '''
 
 
-    def __init__(self, _pieces=None):
+    def __init__(self, _pieces={}):
         '''
         Constructor
         '''
-        self.pieces = {}  # { Key : value } -> { Position : Piece }
+        self.pieces = _pieces  # { Key : value } -> { Position : Piece }
         self.last_piece_played = None
+        
+    def inbounds(self, position):
+        if (position[0] <= 14 and position[0] >= 0) and (position[1] <= 14 and position[1] >= 0):
+            return True
+        return False
+    
+    def _get_last_move(self):
+        return self.last_piece_played
+    
+    def get_pieces(self):
+        return self.pieces.copy()
         
     def put_piece(self, piece):
         pos = piece.get_position()
@@ -45,19 +54,9 @@ class Board(object):
             aux = aux.get_color()
         return aux
     
-    
-    def verify_game_over(self): # @Deprecated
-        print(self.pieces)
-        for pos, piece in self.pieces.items():
-            color = piece.get_color()
-            for vector in DIRECTIONS:
-                if self.verify_sequence(pos, vector, color):
-                    return True
-        return False
-    
-    def verify_game_over2(self):
+    def verify_game_over(self):
         base_pos, color = self.last_piece_played.get_position(), self.last_piece_played.get_color()
-        for vector in DIRECTIONS2:
+        for vector in DIRECTIONS:
             backside, frontside = base_pos, base_pos
             bs_continue, fs_continue = True, True
             total = 1
@@ -78,14 +77,3 @@ class Board(object):
                 return "end"
         return False
             
-    def verify_sequence(self, pos, vector, color): # @Deprecated
-        sequence = 1
-        for i in range(4):
-            pos += vector
-            if self.piece_at(pos) is None:
-                continue
-            if self.piece_at(pos).color == color:
-                sequence += 1
-            if sequence == 5:
-                return True
-        pass
