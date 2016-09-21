@@ -40,6 +40,11 @@ class Position(object):
         x = self.x + position[0]
         y = self.y + position[1]
         return Position(x, y)
-
     
+    def __mul__(self, scalar):
+        return Position(self.x * scalar, self.y * scalar)
+
+if __name__ == "__main__":
+    p = Position(1,0)
+    print(p*3) # != 3*p 
     
