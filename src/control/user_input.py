@@ -34,8 +34,12 @@ class UserInput(object):
             elif result == 'four':
                 self.main_window.four_sequence_warning()
             self.main_window.change_player_turn(self.game.get_active_player())
+            self.game.ai_player_move()
                 
-            
+    def ai_move(self, position):
+        sq = self.main_window.get_square(position)
+        sq.clicked.emit()
+        
     def new_game(self):
         self.game.new_game()
         self.main_window.clean()

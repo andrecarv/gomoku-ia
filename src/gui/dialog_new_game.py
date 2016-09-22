@@ -17,14 +17,15 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_DialogNewGame(object):
+    
     def setReturnValues(self):
         self.is_player2_human = self.radio_button_human.isChecked()
-        if self.radio_button_easy.isChecked:
-            self.difficulty = 0
-        if self.radio_button_medium.isChecked():
-            self.difficulty = 1
-        if self.radio_button_hard.isChecked():
+        if self.radio_button_easy.isChecked():
             self.difficulty = 2
+        if self.radio_button_medium.isChecked():
+            self.difficulty = 3
+        if self.radio_button_hard.isChecked():
+            self.difficulty = 4
         self.dialog.accept()
         
     def setupUi(self, DialogNewGame):

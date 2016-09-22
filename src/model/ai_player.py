@@ -5,17 +5,27 @@ Created on Sep 5, 2016
 '''
 import sys
 from model.board import Board, DIRECTIONS
-from game import PLAYER_COLOR
 from model.sequence import Sequence
 
-SEQUENCE_SCORE = {1: 10, 2:1000, 3:50000, 4:1000000, 5:sys.maxsize}
+SEQUENCE_SCORE = {1: 10, 2:500, 3:10000, 4:500000, 5:sys.maxsize}
 
 class AINode(Board):
     
     def __init__(self, board=None, value=None):
-        super(Board, self).__init__(board.get_pieces())
-        self.last_piece_played = board._get_last_move()
+        super(Board, self).__init__()
+        if board is not None:
+            self.pieces = board.get_pieces()
+            self.last_piece_played = board._get_last_move()
+        self.moves = []
         self.value = value
+
+    def get_move(self):
+        if len(self.moves) > 0:
+            return self.moves[0]
+        
+    def put_piece(self, piece):
+        self.moves.append(piece)
+        return Board.put_piece(self, piece)
         
     def set_value(self, value):
         self.value = value
@@ -41,136 +51,150 @@ class AINode(Board):
     def __le__(self, ainode):
         return self.value <= ainode.get_value()
     
-    def _get_sequence(self, piece, board, bvect, fvect, index):
-        bpos = piece._get_pos()
+    def _get_sequence(self, piece, bvect, fvect, index):
+        bpos = piece.get_position()
         color = piece.get_color()
         seq = Sequence(color)
         seq.add(piece)
         aux_index = index
-        for i in range(aux_index):
+        for i in range(index):
             bpos += bvect
-            if board.color_at() == color:
-                seq.add(board.piece_at(bpos))
-            elif board.color_at() is not None or not board.inbounds(bpos):
-                aux_index = i + 1
+            if self.color_at(bpos) == color:
+                seq.add(self.piece_at(bpos))
+            elif self.color_at(bpos) is not None or not self.inbounds(bpos):
+                aux_index = i
                 seq.set_bblocked()
                 break
-        fpos = piece._get_pos()
+        fpos = piece.get_position()
         for i in range(4 - aux_index):
             fpos += fvect
-            if board.color_at() == color:
-                seq.add(board.piece_at(fpos))
-            elif board.color_at() is not None or not board.inbounds(bpos):
-                aux_index = (4-aux_index) - i
+            if self.color_at(fpos) == color:
+                seq.add(self.piece_at(fpos))
+            elif self.color_at(fpos) is not None or not self.inbounds(bpos):
+                aux_index = i
                 seq.set_fblocked()
                 if seq.is_bblocked():
                     return seq
                 break
         if seq.is_fblocked():
-            for i in range(aux_index):
+            for i in range(4 - aux_index):
                 bpos += bvect
-                if board.color_at() == color:
-                    seq.add(board.piece_at(bpos))
-                elif board.color_at() is not None or not board.inbounds(bpos):
-                    aux_index = i + 1
+                if self.color_at(bpos) == color:
+                    seq.add(self.piece_at(bpos))
+                elif self.color_at(bpos) is not None or not self.inbounds(bpos):
                     seq.set_bblocked()
                     break
         return seq
     
-    def evaluate_board(self, board):
-        sequences = {PLAYER_COLOR[1]: set(), PLAYER_COLOR[-1]:set()}
+    def evaluate_board(self, ai_color):
+#         print("Evaluating...")
+        sequences = {ai_color: set()}
+        player_color = 'red'
+        if ai_color == 'red':
+            player_color = 'green'
+        sequences[player_color] = set()
         total = 0
-        for pos, piece in board.get_pieces().items():
-            c = piece.get_color()
+        for piece in self.pieces.values():
             for vectors in DIRECTIONS:
                 for i in range(5):
-                    seq = self._get_sequence(piece, board, vectors[0], vectors[1], i)
+                    seq = self._get_sequence(piece, vectors[0], vectors[1], i)
                     if seq.is_bblocked() and seq.is_fblocked():
                         continue
                     sequences[seq.get_color()].add(seq)
-                
-            # sum pieces with same color in each way (max of four positions on each direction) (left-right, up-down, left top-right bottom, left bottom-right top)
-            # if find a piece with different color set blocked to true, if already blocked set double_blocked
-            # if double_blocked, continue to next piece
         score = 0
-        for seq in sequences[PLAYER_COLOR[1]]:
+        print(("tamanhos ", len(sequences[ai_color]), len(sequences[player_color])))
+        for seq in sequences[ai_color]:
             if seq.is_bblocked() or seq.is_fblocked():
                 score += SEQUENCE_SCORE[len(seq)] / 10
                 continue
             score += SEQUENCE_SCORE[len(seq)]
         total = total + score
         score = 0
-        for seq in sequences[PLAYER_COLOR[-1]]:
+        for seq in sequences[player_color]:
             if seq.is_bblocked() or seq.is_fblocked():
                 score += SEQUENCE_SCORE[len(seq)] / 10
                 continue
             score += SEQUENCE_SCORE[len(seq)]
         total = total - score
-        return total
+        self.value = total
+        print('evaluation: ', self.value)
 
 class AIPlayer(object):
     '''
     classdocs
     '''
 
-    def __init__(self, color):
+    def __init__(self, color, difficulty):
         '''
         Constructor
         '''
         self.color = color
+        self.difficulty = difficulty
+        
+    def get_move(self, board):
+        return self.minimax(AINode(board), depth=self.difficulty).get_move()
         
     def derivate(self, ainode):
-        last_color = ainode.get_last_move().get_color()
+        last_color = ainode._get_last_move().get_color()
         color = 'green'
         if last_color is 'green':
             color = 'red'
+        positions = set()
         children = []
-        from model.board import DIRECTIONS
         from model.piece import Piece
-        DIRECTIONS
         for base_pos in ainode.get_pieces().keys():
             for vectors in DIRECTIONS:
                 pos = base_pos
-                for i in range(4):  # @UnusedVariable
+                for i in range(2):  # @UnusedVariable
                     pos += vectors[0]
-                    if ainode.board.piece_at(pos) is None and ainode.inbounds(pos):
-                        child = ainode.copy()
-                        child.board.put_piece(Piece(pos, color))
-                        children.append(child)
+                    if ainode.piece_at(pos) is None and ainode.inbounds(pos):
+                        positions.add(pos)
                     else:
                         break
                 pos = base_pos
-                for i in range(4):  # @UnusedVariable
+                for i in range(2):  # @UnusedVariable
                     pos += vectors[1]
-                    if ainode.board.piece_at(pos) is None and ainode.inbounds(pos):
-                        child = ainode.copy()
-                        child.board.put_piece(Piece(pos, color))
-                        children.append(child)
+                    if ainode.piece_at(pos) is None and ainode.inbounds(pos):
+                        positions.add(pos)
                     else:
                         break
+        for pos in positions:
+            child = ainode.copy()
+            child.put_piece(Piece(pos, color))
+            children.append(child)
         return children
+    
+    def _max(self, ainode1, ainode2):
+        if ainode2 > ainode1:
+            return ainode2
+        return ainode1
+    
+    def _min(self, ainode1, ainode2):
+        if ainode2 < ainode1:
+            return ainode2
+        return ainode1
+        
     
     def minimax(self, ainode, depth=4, alpha=AINode(value=(-sys.maxsize)), beta=AINode(value=(sys.maxsize)),
                 maximizingPlayer=True):
-        if depth == 0 or ainode.verify_game_over():
-            return ainode.evaluate_board()
+        if depth == 0 or ainode.verify_game_over() == 'end':
+            ainode.evaluate_board(self.color)
+            return ainode
         if maximizingPlayer:
-            best_value = AINode(best_value=(-sys.maxsize))
+            best_value = AINode(value=(-sys.maxsize))
             for child in self.derivate(ainode):
-                best_value = max(best_value, self.minimax(child, depth - 1, alpha, beta, False))
-                alpha = max(alpha, child)
+                best_value = self._max(best_value, self.minimax(child, depth - 1, alpha, beta, False))
+                alpha = self._max(alpha, best_value)
                 if beta <= alpha:
                     break
-            return best_value
         else:
-            best_value = AINode(best_value=(sys.maxsize))
+            best_value = AINode(value=(sys.maxsize))
             for child in self.derivate(ainode):
-                best_value = min(best_value, self.minimax(child, depth - 1, alpha, beta, True))
-                alpha = min(beta, best_value)
+                best_value = self._min(best_value, self.minimax(child, depth - 1, alpha, beta, True))
+                alpha = self._min(beta, best_value)
                 if beta <= alpha:
                     break
-            return best_value
-    
+        return best_value
     
 #                 # first atempt of verifying sequences
 #            for vectors in DIRECTIONS:

@@ -45,6 +45,8 @@ class Sequence(object):
     def __hash__(self):
         return hash(self.set_of_pieces)
         
+    def __len__(self):
+        return len(self.set_of_pieces)
 
 if __name__ == '__main__':
     conj = set()

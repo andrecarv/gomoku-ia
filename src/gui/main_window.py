@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
         super(QMainWindow, self).__init__()
         self.setWindowTitle("Gomoku")
         self.resize(800, 600)  # 493, 478
-        self.squares = []
+        self.squares = [[None for j in range(15)] for i in range(15)]
         
         self.initUI()
         
@@ -62,8 +62,11 @@ class MainWindow(QMainWindow):
         for i in range(15):
             for j in range(15):
                 sq = Square(Position(i, j))
-                self.squares.append(sq)
+                self.squares[i][j] = sq
                 self.board_layout.addWidget(sq, i, j)
+                
+    def get_square(self, position):
+        return self.squares[position.get_x()][position.get_y()]
                 
     def put_piece(self, position, color):
         label = self.sender()
@@ -80,8 +83,9 @@ class MainWindow(QMainWindow):
     
     def clean(self):
         self.active_player_lbl.setText(PLAYERS[1])
-        for square in self.squares:
-            square.initUI()
+        for row in self.squares:
+            for square in row:
+                square.initUI()
             
     def four_sequence_warning(self):
         d = QDialog()
@@ -100,8 +104,9 @@ class MainWindow(QMainWindow):
         d.exec_()
     
     def set_connections(self, user_input):
-        for square in self.squares:
-            square.clicked.connect(user_input.square_clicked)
+        for row in self.squares:
+            for square in row:
+                square.clicked.connect(user_input.square_clicked)
         self.new_game_btn.clicked.connect(user_input.new_game)
     
 class Square(QLabel):

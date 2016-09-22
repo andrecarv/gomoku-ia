@@ -15,11 +15,11 @@ class Board(object):
     '''
 
 
-    def __init__(self, _pieces={}):
+    def __init__(self):
         '''
         Constructor
         '''
-        self.pieces = _pieces  # { Key : value } -> { Position : Piece }
+        self.pieces = {}  # { Key : value } -> { Position : Piece }
         self.last_piece_played = None
         
     def inbounds(self, position):
